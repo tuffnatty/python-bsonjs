@@ -14,9 +14,9 @@
 import sys
 
 if sys.version_info[0] == 2:
-    from StringIO import StringIO
+    from StringIO import StringIO as BytesIO
 else:
-    from io import StringIO
+    from io import BytesIO
 
 if sys.version_info[:2] == (2, 6):
     import unittest2 as unittest

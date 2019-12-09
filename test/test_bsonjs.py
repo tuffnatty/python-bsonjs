@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Test bsonjs against PyMongo's json_util."""
+from __future__ import unicode_literals
 
 import datetime
 import re
@@ -39,7 +40,7 @@ sys.path.insert(0, "")
 
 import bsonjs
 
-from test import StringIO, unittest
+from test import BytesIO, unittest
 
 
 def to_object(bson_bytes):
@@ -74,7 +75,7 @@ class TestBsonjs(unittest.TestCase):
         self.assertEqual(bson_bytes, bsonjs.loads(bsonjs.dumps(bson_bytes)))
         # Check compatibility between bsonjs and json_util
         self.assertEqual(doc, json_util.loads(
-            bsonjs.dumps(bson_bytes),
+            bsonjs.dumps(bson_bytes).decode('utf8'),
             json_options=json_util.STRICT_JSON_OPTIONS))
         self.assertEqual(bson_bytes, bsonjs.loads(json_util.dumps(
             doc, json_options=json_util.STRICT_JSON_OPTIONS)))
@@ -89,7 +90,7 @@ class TestBsonjs(unittest.TestCase):
         decimal_doc = {"d": Decimal128("12123.000000000003")}
         self.round_trip(decimal_doc)
         self.assertEqual(
-            '{ "d" : { "$numberDecimal" : "12123.000000000003" } }',
+            b'{ "d" : { "$numberDecimal" : "12123.000000000003" } }',
             bsonjs_dumps(decimal_doc))
 
     def test_dbref(self):
@@ -99,7 +100,7 @@ class TestBsonjs(unittest.TestCase):
 
         # Order should be $ref then $id then $db
         self.assertEqual(
-            '{ "ref" : { "$ref" : "collection", "$id" : 1, "$db" : "db" } }',
+            b'{ "ref" : { "$ref" : "collection", "$id" : 1, "$db" : "db" } }',
             bsonjs_dumps({"ref": DBRef("collection", 1, "db")}))
 
     def test_datetime(self):
@@ -154,11 +155,11 @@ class TestBsonjs(unittest.TestCase):
 
         # Order should be $regex then $options
         self.assertEqual(
-            '{ "regex" : { "$regex" : ".*", "$options" : "mx" } }',
+            b'{ "regex" : { "$regex" : ".*", "$options" : "mx" } }',
             bsonjs_dumps({"regex": Regex(".*", re.M | re.X)}))
 
         self.assertEqual(
-            '{ "regex" : { "$regex" : ".*", "$options" : "mx" } }',
+            b'{ "regex" : { "$regex" : ".*", "$options" : "mx" } }',
             bsonjs_dumps({"regex": re.compile(b".*", re.M | re.X)}))
 
     def test_minkey(self):
@@ -170,7 +171,7 @@ class TestBsonjs(unittest.TestCase):
     def test_timestamp(self):
         dct = {"ts": Timestamp(4, 13)}
         res = bsonjs_dumps(dct)
-        self.assertEqual('{ "ts" : { "$timestamp" : { "t" : 4, "i" : 13 } } }',
+        self.assertEqual(b'{ "ts" : { "$timestamp" : { "t" : 4, "i" : 13 } } }',
                          res)
 
         rtdct = bsonjs_loads(res)
@@ -212,7 +213,7 @@ class TestBsonjs(unittest.TestCase):
 
         # Check order.
         self.assertEqual(
-            '{ "code" : { "$code" : "return z", "$scope" : { "z" : 2 } } }',
+            b'{ "code" : { "$code" : "return z", "$scope" : { "z" : 2 } } }',
             bsonjs_dumps(code))
 
     def test_undefined(self):
@@ -239,7 +240,7 @@ class TestBsonjs(unittest.TestCase):
         _ = bsonjs.loads('{"a": 1, "$numberLong": "42"}')
 
     def test_dumps_multiple_bson_documents(self):
-        json_str = '{ "test" : "me" }'
+        json_str = b'{ "test" : "me" }'
         bson_bytes = bsonjs.loads(json_str)
         self.assertEqual(json_str, bsonjs.dumps(bson_bytes + bson_bytes))
 
@@ -248,12 +249,12 @@ class TestBsonjs(unittest.TestCase):
         self.assertEqual(bsonjs.loads(json_str), bsonjs.loads(json_str + "{}"))
 
     def test_dump_basic(self):
-        json_str = '{ "test" : "me" }'
+        json_str = b'{ "test" : "me" }'
         bson_bytes = bsonjs.loads(json_str)
-        filep = StringIO()
+        filep = BytesIO()
         bsonjs.dump(bson_bytes, filep)
         filep.seek(0)
-        self.assertEqual(json_str, filep.read())
+        self.assertEqual(bytes(json_str), filep.read())
 
     def test_dump_throws_no_write_attribute(self):
         bson_bytes = bsonjs.loads('{ "test" : "me" }')
@@ -261,8 +262,8 @@ class TestBsonjs(unittest.TestCase):
         self.assertRaises(AttributeError, bsonjs.dump, bson_bytes, not_file)
 
     def test_load_basic(self):
-        json_str = '{ "test" : "me" }'
-        filep = StringIO(json_str)
+        json_str = b'{ "test" : "me" }'
+        filep = BytesIO(json_str)
         self.assertEqual(bsonjs.loads(json_str), bsonjs.load(filep))
 
     def test_load_unicode(self):

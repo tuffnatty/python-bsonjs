@@ -72,7 +72,11 @@ _dumps(PyObject *bson)
         return NULL;
     }
 
+#if PY_MAJOR_VERSION >= 3
+    rv = Py_BuildValue("y#", json, json_len);
+#else
     rv = Py_BuildValue("s#", json, json_len);
+#endif
     bson_free((void *)json);
     return rv;
 }
@@ -98,6 +102,7 @@ dump(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    //if (PyFile_WriteString(PyBytes_AS_STRING(json), file) == -1) {
     if (PyFile_WriteObject(json, file, Py_PRINT_RAW) == -1) {
         Py_DECREF(json);
         return NULL;
@@ -108,7 +113,7 @@ dump(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(dumps__doc__,
-"dumps(bson) -> str\n"
+"dumps(bson) -> bytes\n"
 "\n"
 "Decode the BSON bytes object `bson` to MongoDB Extended JSON strict mode.\n"
 "This function wraps `bson_as_json` from libbson.");
